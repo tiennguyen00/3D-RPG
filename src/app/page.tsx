@@ -1,91 +1,103 @@
-import Image from 'next/image'
-import { Inter } from 'next/font/google'
-import styles from './page.module.css'
+"use client";
 
-const inter = Inter({ subsets: ['latin'] })
+import { Fog, Ground, Light, Nature } from "@/components";
+import CharacterModel from "@/components/Character";
+import SurvivalPack from "@/components/SurvivalPack";
+import { Physics, Debug } from "@react-three/cannon";
+import {
+  KeyboardControls,
+  Loader,
+  OrbitControls,
+  Sparkles,
+} from "@react-three/drei";
+import { Canvas } from "@react-three/fiber";
+import { Perf } from "r3f-perf";
+import { Suspense, useRef } from "react";
 
-export default function Home() {
+export default function Main() {
+  const orbitControlRef = useRef(null);
+
   return (
-    <main className={styles.main}>
-      <div className={styles.description}>
-        <p>
-          Get started by editing&nbsp;
-          <code className={styles.code}>src/app/page.tsx</code>
-        </p>
-        <div>
-          <a
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className={styles.vercelLogo}
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className={styles.center}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
+    <KeyboardControls
+      map={[
+        { name: "forward", keys: ["ArrowUp", "KeyW"] },
+        { name: "backward", keys: ["ArrowDown", "KeyS"] },
+        { name: "leftward", keys: ["ArrowLeft", "KeyA"] },
+        { name: "rightward", keys: ["ArrowRight", "KeyD"] },
+        { name: "jump", keys: ["Space"] },
+        { name: "run", keys: ["Shift"] },
+      ]}
+    >
+      <div className="w-screen h-screen">
+        <Loader
+          containerStyles={{
+            innerWidth: "100%",
+            innerHeight: "100%",
+            justifyContent: "center",
+            alginItems: "center",
+          }}
+          dataInterpolation={(p) => {
+            return `Loading ${p.toFixed(2)}%`;
+          }}
+          initialState={(active) => active}
         />
-        <div className={styles.thirteen}>
-          <Image src="/thirteen.svg" alt="13" width={40} height={31} priority />
-        </div>
+        <Canvas
+          camera={{
+            fov: 75,
+            near: 0.1,
+            far: 1000,
+            position: [0, 15, -25],
+            frustumCulled: true,
+          }}
+          shadows
+        >
+          <axesHelper position-y={3} />
+          <Physics gravity={[0, -9.81, 0]}>
+            <Debug>
+              <color attach="background" args={["#182D09"]} />
+              {/* Enviroments */}
+              <Fog />
+              <Light />
+              <Suspense fallback={null}>
+                <Ground />
+                <Nature />
+              </Suspense>
+              <Sparkles
+                size={6}
+                speed={2}
+                scale={[100, 50, 100]}
+                count={1000}
+                position-y={25}
+                color="#FFD700"
+              />
+
+              {/* Control camera */}
+              <OrbitControls ref={orbitControlRef} />
+
+              {/* Load character moodel */}
+              <Suspense fallback={null}>
+                <CharacterModel />
+              </Suspense>
+
+              {/* Survival pack */}
+              <SurvivalPack
+                name="Bonfire"
+                position={[7, 0, 5]}
+                light={
+                  <pointLight
+                    color="#FFA500"
+                    intensity={10}
+                    decay={3}
+                    distance={15}
+                    position-y={1.5}
+                  />
+                }
+              />
+            </Debug>
+          </Physics>
+          <Perf position="top-left" />
+        </Canvas>
       </div>
-
-      <div className={styles.grid}>
-        <a
-          href="https://beta.nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={inter.className}>
-            Docs <span>-&gt;</span>
-          </h2>
-          <p className={inter.className}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={inter.className}>
-            Templates <span>-&gt;</span>
-          </h2>
-          <p className={inter.className}>Explore the Next.js 13 playground.</p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className={styles.card}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={inter.className}>
-            Deploy <span>-&gt;</span>
-          </h2>
-          <p className={inter.className}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
-  )
+    </KeyboardControls>
+  );
 }
