@@ -15,7 +15,7 @@ import { Perf } from "r3f-perf";
 import { Suspense, useRef } from "react";
 
 export default function Main() {
-  const orbitControlRef = useRef(null);
+  const orbitControlRef = useRef<any>(null);
 
   return (
     <KeyboardControls
@@ -44,7 +44,7 @@ export default function Main() {
         <Canvas
           camera={{
             fov: 75,
-            near: 0.1,
+            near: 10,
             far: 1000,
             position: [0, 15, -25],
             frustumCulled: true,
@@ -76,7 +76,7 @@ export default function Main() {
 
               {/* Load character moodel */}
               <Suspense fallback={null}>
-                <CharacterModel />
+                <CharacterModel orbitControlRef={orbitControlRef} />
               </Suspense>
 
               {/* Survival pack */}
