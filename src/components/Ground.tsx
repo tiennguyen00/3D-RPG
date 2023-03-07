@@ -1,53 +1,141 @@
-import React, { useLayoutEffect, useRef } from "react";
-import { createNoise2D } from "simplex-noise";
+import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
-import { usePlane } from "@react-three/cannon";
+import { Triplet, useHeightfield, usePlane } from "@react-three/cannon";
 
-const Ground: React.FC = () => {
-  const noise2D = createNoise2D();
+type GenerateHeightmapArgs = {
+  height: number;
+  number: number;
+  scale: number;
+  width: number;
+};
 
-  const terrain = useRef<THREE.PlaneGeometry>(null!);
+const scale = 1000;
 
-  const [ref] = usePlane(() => ({
-    type: "Static",
-    rotation: [-Math.PI / 2, 0, 0],
-    position: [0, 0, 0],
+const Heightfield = ({
+  elementSize,
+  heights,
+  position,
+  rotation,
+}: {
+  elementSize: number;
+  heights: number[][];
+  position: Triplet;
+  rotation: Triplet;
+}): JSX.Element => {
+  const ref = useRef<THREE.BufferGeometry>(null);
+  useHeightfield(() => ({
+    args: [
+      heights,
+      {
+        elementSize,
+      },
+    ],
+    position,
+    rotation,
   }));
 
-  useLayoutEffect(() => {
-    const pos = terrain.current.getAttribute("position");
-    const pa = (pos as any).array;
+  useEffect(() => {
+    if (!ref.current) return;
+    const dx = elementSize;
+    const dy = elementSize;
 
-    const hVerts = terrain.current.parameters.heightSegments + 1;
-    const wVerts = terrain.current.parameters.widthSegments + 1;
+    /* Create the vertex data from the heights. */
+    const vertices = heights.flatMap((row, i) =>
+      row.flatMap((z, j) => [i * dx, j * dy, z])
+    );
 
-    for (let j = 0; j < hVerts; j++) {
-      for (let i = 0; i < wVerts; i++) {
-        const ex = Math.random() * 1.3;
-        pa[3 * (j * wVerts + i) + 2] =
-          (noise2D(i / 100, j / 100) +
-            noise2D((i + 200) / 100, j / 50) * Math.pow(ex, 1) +
-            noise2D((i + 400) / 50, j / 25) * Math.pow(ex, 2) +
-            noise2D((i + 600) / 25, j / 12.5) * Math.pow(ex, 3) +
-            +(noise2D((i + 800) / 6.25, j / 6.25) * Math.pow(ex, 4))) /
-          2;
+    /* Create the faces. */
+    const indices = [];
+    for (let i = 0; i < heights.length - 1; i++) {
+      for (let j = 0; j < heights[i].length - 1; j++) {
+        const stride = heights[i].length;
+        const index = i * stride + j;
+        indices.push(index + 1, index + stride, index + stride + 1);
+        indices.push(index + stride, index + 1, index);
       }
     }
 
-    pos.needsUpdate = true;
-
-    terrain.current.computeVertexNormals();
-  });
+    ref.current.setIndex(indices);
+    ref.current.setAttribute(
+      "position",
+      new THREE.Float32BufferAttribute(vertices, 3)
+    );
+    ref.current.computeVertexNormals();
+    ref.current.computeBoundingBox();
+    ref.current.computeBoundingSphere();
+  }, [heights]);
 
   return (
-    <mesh position={[0, 0, 0]} receiveShadow rotation={[-Math.PI / 2, 0, 0]}>
-      <planeGeometry
-        attach="geometry"
-        args={[1000, 1000, 250, 250]}
-        ref={terrain}
-      />
+    <mesh
+      castShadow
+      receiveShadow
+      position={[-scale / 2, 0, scale / 2]}
+      rotation={[-Math.PI / 2, 0, 0]}
+    >
+      <meshPhongMaterial color={"#69b581"} />
+      <bufferGeometry ref={ref} />
+    </mesh>
+  );
+};
 
-      <meshPhongMaterial attach="material" color="#69b581" />
+const Ground: React.FC = () => {
+  /* Generates a 2D array using Worley noise. */
+  function generateHeightmap({
+    width,
+    height,
+    number,
+    scale,
+  }: GenerateHeightmapArgs) {
+    const data = [];
+    const seedPoints: [x: number, y: number][] = [];
+
+    Array.from(Array(number).keys()).map((i) => {
+      seedPoints.push([Math.random(), Math.random()]);
+    });
+
+    let max = 0;
+    for (let i = 0; i < width; i++) {
+      const row = [];
+      for (let j = 0; j < height; j++) {
+        let min = Infinity;
+        seedPoints.forEach((p) => {
+          const distance2 = (p[0] - i / width) ** 2 + (p[1] - j / height) ** 2;
+          if (distance2 < min) {
+            min = distance2;
+          }
+        });
+        const d = Math.sqrt(min);
+        if (d > max) {
+          max = d;
+        }
+        row.push(d);
+      }
+      data.push(row);
+    }
+
+    /* Normalize and scale. */
+    for (let i = 0; i < width; i++) {
+      for (let j = 0; j < height; j++) {
+        data[i][j] *= scale / max;
+      }
+    }
+
+    return data;
+  }
+
+  return (
+    <mesh receiveShadow>
+      <Heightfield
+        elementSize={(scale * 1) / 128}
+        position={[-scale / 2, 0, scale / 2]}
+        rotation={[-Math.PI / 2, 0, 0]}
+        heights={generateHeightmap({
+          height: 128,
+          number: 100,
+          scale: 40,
+          width: 128,
+        })}
+      />
     </mesh>
   );
 };

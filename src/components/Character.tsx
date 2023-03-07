@@ -1,3 +1,4 @@
+import useAnimation, { ActionName, Animations } from "@/hooks/useAnimation";
 import useCamera from "@/hooks/useCamera";
 import useMoving from "@/hooks/useMoving";
 import {
@@ -7,10 +8,10 @@ import {
   useCompoundBody,
   useSphere,
 } from "@react-three/cannon";
-import { useGLTF } from "@react-three/drei";
+import { useAnimations, useGLTF } from "@react-three/drei";
 import { useFrame, useThree } from "@react-three/fiber";
-import React, { useEffect, useMemo, useRef } from "react";
-import { Group, Mesh } from "three";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { AnimationMixer, Group, Mesh } from "three";
 
 const CharacterModel = ({ orbitControlRef }: any) => {
   const character = useGLTF("/men-pack/Adventurer.glb");
@@ -22,6 +23,14 @@ const CharacterModel = ({ orbitControlRef }: any) => {
     camera,
     orbitControlRef.current,
     isDrag.current
+  );
+  const { actions, names } = useAnimations(
+    character.animations,
+    character.scene
+  );
+  const { changeAnim } = useAnimation(
+    actions as Animations,
+    names as ActionName[]
   );
 
   const rotationCollider = useRef<Triplet>();
@@ -50,7 +59,7 @@ const CharacterModel = ({ orbitControlRef }: any) => {
     mass: 50,
     type: "Dynamic",
     args: [4.5],
-    position: [0, 8, 0],
+    position: [0, 40, 0],
     fixedRotation: true,
   }));
 
@@ -102,6 +111,8 @@ const CharacterModel = ({ orbitControlRef }: any) => {
     // Update the camera
     if (!quadCollider.current || !orbitControlRef.current) return;
     updateCameraTarget(delta, posCollider.current, quadCollider.current);
+
+    changeAnim();
   });
 
   return (

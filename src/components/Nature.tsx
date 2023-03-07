@@ -2,6 +2,58 @@ import React, { useMemo } from "react";
 import * as THREE from "three";
 import { FBXLoader } from "three/examples/jsm/loaders/FBXLoader";
 import { useLoader } from "@react-three/fiber";
+import { useBox } from "@react-three/cannon";
+
+const NatureCollider = ({ args, models }: { args: any; models: any }) => {
+  const pos = new THREE.Vector3(
+    Math.ceil(Math.random() * 200) * (Math.round(Math.random()) ? 1 : -1),
+    0,
+    Math.ceil(Math.random() * 200) * (Math.round(Math.random()) ? 1 : -1)
+  );
+  const [ref, api] = useBox(() => ({
+    mass: 150,
+    position: [pos.x, pos.y + 100, pos.z],
+    args: args,
+    fixedRotation: true,
+  }));
+
+  const idx: number = Math.floor(Math.random() * 11) + 1;
+
+  return (
+    <group ref={ref as any}>
+      <primitive
+        key={idx}
+        position={pos}
+        scale={0.1}
+        object={
+          idx === 1
+            ? models.birch3.clone()
+            : idx === 2
+            ? models.birch4.clone()
+            : idx === 3
+            ? models.berry1.clone()
+            : idx === 4
+            ? models.ctree3.clone()
+            : idx === 5
+            ? models.ctree5.clone()
+            : idx === 6
+            ? models.grass2.clone()
+            : idx === 7
+            ? models.grass.clone()
+            : idx === 8
+            ? models.rock1.clone()
+            : idx === 9
+            ? models.rock5.clone()
+            : idx === 10
+            ? models.willow2.clone()
+            : idx === 11
+            ? models.willow5.clone()
+            : models.log.clone()
+        }
+      />
+    </group>
+  );
+};
 
 const Nature: React.FC = () => {
   const [
@@ -31,6 +83,21 @@ const Nature: React.FC = () => {
     "./textures/nature/Willow_5.fbx",
     "./textures/nature/WoodLog_Moss.fbx",
   ]);
+
+  const models = {
+    birch3,
+    birch4,
+    berry1,
+    ctree3,
+    ctree5,
+    grass2,
+    grass,
+    rock1,
+    rock5,
+    willow2,
+    willow5,
+    log,
+  };
 
   birch3.scale.setScalar(0.4);
   birch3.traverse((o) => {
@@ -94,60 +161,12 @@ const Nature: React.FC = () => {
   });
 
   const objects: JSX.Element[] = [];
-
   useMemo(() => {
     for (let i = 0; i < 100; i++) {
-      const idx: number = Math.floor(Math.random() * 11) + 1;
-      const pos = new THREE.Vector3(
-        Math.ceil(Math.random() * 200) * (Math.round(Math.random()) ? 1 : -1),
-        0,
-        Math.ceil(Math.random() * 200) * (Math.round(Math.random()) ? 1 : -1)
-      );
-
-      const obj = (
-        <primitive
-          key={i}
-          position={pos}
-          scale={0.1}
-          object={
-            idx === 1
-              ? birch3.clone()
-              : idx === 2
-              ? birch4.clone()
-              : idx === 3
-              ? berry1.clone()
-              : idx === 4
-              ? ctree3.clone()
-              : idx === 5
-              ? ctree5.clone()
-              : idx === 6
-              ? grass2.clone()
-              : idx === 7
-              ? grass.clone()
-              : idx === 8
-              ? rock1.clone()
-              : idx === 9
-              ? rock5.clone()
-              : idx === 10
-              ? willow2.clone()
-              : idx === 11
-              ? willow5.clone()
-              : log.clone()
-          }
-        />
-      );
-
-      objects.push(obj);
+      objects.push(<NatureCollider args={[2, 10, 2]} models={models} />);
     }
   }, []);
 
-  return (
-    <group>
-      {objects.map((obj: JSX.Element) => {
-        return obj;
-      })}
-    </group>
-  );
+  return <group>{objects.map((i) => i)}</group>;
 };
-
-export { Nature };
+export default React.memo(Nature);

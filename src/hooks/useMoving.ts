@@ -46,15 +46,15 @@ const useMoving = (isDrag: boolean) => {
     const degreeX = THREE.MathUtils.radToDeg(euler.x);
 
     const naughtyVector = new THREE.Vector3(
-      Math.sin((degreeY * Math.PI) / 180) * 10,
+      Math.sin((degreeY * Math.PI) / 180) * 20,
       0,
       Math.cos((degreeY * Math.PI) / 180) *
-        10 *
+        20 *
         (degreeX === -180 || degreeX === 180 ? -1 : 1)
     );
 
     if (run) {
-      naughtyVector.multiplyScalar(1.5);
+      naughtyVector.multiplyScalar(2);
     }
 
     if (forward) {

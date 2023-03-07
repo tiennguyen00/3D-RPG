@@ -6,6 +6,7 @@ import {
   SpotLightProps,
 } from "@react-three/fiber";
 import { ReactElement, useRef } from "react";
+import { useBox, useSphere } from "@react-three/cannon";
 
 interface SurvivalPackProps extends GroupProps {
   name: string;
@@ -13,14 +14,20 @@ interface SurvivalPackProps extends GroupProps {
 }
 
 const SurvivalPack = ({ name, light, ...rest }: SurvivalPackProps) => {
-  const ref = useRef(null);
+  const lightRef = useRef(null);
   const urlModel = `/survival-pack/${name}.glb`;
   const model = useGLTF(urlModel);
 
-  useHelper(!!ref ? (ref as any) : undefined, THREE.PointLightHelper);
+  useHelper(!!lightRef ? (lightRef as any) : undefined, THREE.PointLightHelper);
+  const [ref] = useSphere(() => ({
+    position: [0, 50, 0],
+    args: [1],
+    mass: 10,
+    fixedRotation: true,
+  }));
 
   return (
-    <group {...rest}>
+    <group ref={ref as any} {...rest}>
       {/* <pointLight
         ref={ref}
         color="#FFA500"
@@ -30,7 +37,7 @@ const SurvivalPack = ({ name, light, ...rest }: SurvivalPackProps) => {
         position-y={1.5}
       /> */}
       {!!light && light}
-      <primitive object={model.scene} />
+      <primitive position-y={-1} object={model.scene} />
     </group>
   );
 };

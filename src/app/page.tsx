@@ -1,7 +1,8 @@
 "use client";
 
-import { Fog, Ground, Light, Nature } from "@/components";
+import { Fog, Ground, Light } from "@/components";
 import CharacterModel from "@/components/Character";
+import Nature from "@/components/Nature";
 import SurvivalPack from "@/components/SurvivalPack";
 import { Physics, Debug } from "@react-three/cannon";
 import {
